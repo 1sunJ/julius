@@ -4,7 +4,9 @@
 #include "city/message.h"
 #include "city/view.h"
 #include "city/warning.h"
+#include "core/config.h"
 #include "core/direction.h"
+#include "core/hotkey_config.h"
 #include "game/orientation.h"
 #include "game/state.h"
 #include "game/undo.h"
@@ -97,9 +99,47 @@ static image_button buttons_top_expanded[] = {
     {123, 184, 33, 22, IB_NORMAL, GROUP_SIDEBAR_BRIEFING_ROTATE_BUTTONS, 9, button_rotate, button_none, 1, 0, 1},
 };
 
+// Same order as the first 12 entries of buttons_build_collapsed and buttons_build_expanded
+static const hotkey_action build_button_hotkeys[] = {
+    HOTKEY_BUILD_VACANT_HOUSE,
+    HOTKEY_BUILD_CLEAR_LAND,
+    HOTKEY_BUILD_ROAD,
+    HOTKEY_BUILD_MENU_WATER,
+    HOTKEY_BUILD_MENU_HEALTH,
+    HOTKEY_BUILD_MENU_TEMPLES,
+    HOTKEY_BUILD_MENU_EDUCATION,
+    HOTKEY_BUILD_MENU_ENTERTAINMENT,
+    HOTKEY_BUILD_MENU_ADMINISTRATION,
+    HOTKEY_BUILD_MENU_ENGINEERING,
+    HOTKEY_BUILD_MENU_SECURITY,
+    HOTKEY_BUILD_MENU_INDUSTRY
+};
+
 static struct {
     int focus_button_for_tooltip;
 } data;
+
+static void draw_build_button_hotkeys(int x_offset, const image_button *buttons)
+{
+    if (!config_get(CONFIG_UI_SHOW_BUILD_HOTKEYS)) {
+        return;
+    }
+    for (int i = 0; i < 12; i++) {
+        const hotkey_mapping *mapping = hotkey_for_action(build_button_hotkeys[i], 0);
+        if (!mapping || !buttons[i].enabled) {
+            continue;
+        }
+        const uint8_t *name = key_combination_display_name(mapping->key, mapping->modifiers);
+        // Dark badge in the bottom right corner, so the key stays readable on any button image
+        int badge_width = text_get_width(name, FONT_SMALL_PLAIN) + 4;
+        int badge_height = 12;
+        int x = x_offset + buttons[i].x_offset + buttons[i].width - badge_width - 1;
+        int y = 24 + buttons[i].y_offset + buttons[i].height - badge_height - 1;
+        graphics_fill_rect(x, y, badge_width, badge_height, COLOR_TOOLTIP);
+        graphics_draw_rect(x, y, badge_width, badge_height, COLOR_BLACK);
+        text_draw(name, x + 2, y + 2, FONT_SMALL_PLAIN, COLOR_FONT_YELLOW);
+    }
+}
 
 static void draw_overlay_text(int x_offset)
 {
@@ -139,6 +179,7 @@ static void draw_buttons_collapsed(int x_offset)
 {
     image_buttons_draw(x_offset, 24, button_expand_sidebar, 1);
     image_buttons_draw(x_offset, 24, buttons_build_collapsed, 12);
+    draw_build_button_hotkeys(x_offset, buttons_build_collapsed);
 }
 
 static void draw_buttons_expanded(int x_offset)
@@ -146,6 +187,7 @@ static void draw_buttons_expanded(int x_offset)
     buttons_build_expanded[12].enabled = game_can_undo();
     image_buttons_draw(x_offset, 24, buttons_overlays_collapse_sidebar, 2);
     image_buttons_draw(x_offset, 24, buttons_build_expanded, 15);
+    draw_build_button_hotkeys(x_offset, buttons_build_expanded);
     image_buttons_draw(x_offset, 24, buttons_top_expanded, 6);
 }
 

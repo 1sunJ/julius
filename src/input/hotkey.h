@@ -25,6 +25,9 @@ typedef struct {
     int save_file;
     int building;
     int clone_building;
+    int build_menu;
+    // only set while the build menu is open: 1-based item index from the number keys
+    int build_menu_item;
 } hotkeys;
 
 void hotkey_install_mapping(hotkey_mapping *mappings, int num_mappings);

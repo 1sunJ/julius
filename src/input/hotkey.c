@@ -1,5 +1,6 @@
 #include "hotkey.h"
 
+#include "building/menu.h"
 #include "building/type.h"
 #include "city/constants.h"
 #include "game/settings.h"
@@ -274,6 +275,42 @@ static void set_definition_for_action(hotkey_action action, hotkey_definition *d
         case HOTKEY_BUILD_CLONE:
             def->action = &data.hotkey_state.clone_building;
             break;
+        case HOTKEY_BUILD_MENU_WATER:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_WATER;
+            break;
+        case HOTKEY_BUILD_MENU_HEALTH:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_HEALTH;
+            break;
+        case HOTKEY_BUILD_MENU_TEMPLES:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_TEMPLES;
+            break;
+        case HOTKEY_BUILD_MENU_EDUCATION:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_EDUCATION;
+            break;
+        case HOTKEY_BUILD_MENU_ENTERTAINMENT:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_ENTERTAINMENT;
+            break;
+        case HOTKEY_BUILD_MENU_ADMINISTRATION:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_ADMINISTRATION;
+            break;
+        case HOTKEY_BUILD_MENU_ENGINEERING:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_ENGINEERING;
+            break;
+        case HOTKEY_BUILD_MENU_SECURITY:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_SECURITY;
+            break;
+        case HOTKEY_BUILD_MENU_INDUSTRY:
+            def->action = &data.hotkey_state.build_menu;
+            def->value = BUILD_MENU_INDUSTRY;
+            break;
         default:
             def->action = 0;
     }
@@ -386,6 +423,18 @@ void hotkey_reset_state(void)
     memset(&data.global_hotkey_state, 0, sizeof(data.global_hotkey_state));
 }
 
+static int build_menu_item_for_key(key_type key)
+{
+    if (key >= KEY_TYPE_1 && key <= KEY_TYPE_9) {
+        return key - KEY_TYPE_1 + 1;
+    } else if (key >= KEY_TYPE_KP_1 && key <= KEY_TYPE_KP_9) {
+        return key - KEY_TYPE_KP_1 + 1;
+    } else if (key == KEY_TYPE_0 || key == KEY_TYPE_KP_0) {
+        return 10;
+    }
+    return 0;
+}
+
 void hotkey_key_pressed(key_type key, key_modifier_type modifiers, int repeat)
 {
     if (window_is(WINDOW_HOTKEY_EDITOR)) {
@@ -394,6 +443,14 @@ void hotkey_key_pressed(key_type key, key_modifier_type modifiers, int repeat)
     }
     if (key == KEY_TYPE_NONE) {
         return;
+    }
+    // Number keys pick an item in the open build menu instead of opening an advisor
+    if (window_is(WINDOW_BUILD_MENU) && modifiers == KEY_MOD_NONE && !repeat) {
+        int item = build_menu_item_for_key(key);
+        if (item) {
+            data.hotkey_state.build_menu_item = item;
+            return;
+        }
     }
     int found_action = 0;
     for (int i = 0; i < data.num_definitions; i++) {

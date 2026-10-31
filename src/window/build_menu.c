@@ -4,6 +4,7 @@
 #include "building/menu.h"
 #include "building/model.h"
 #include "city/view.h"
+#include "core/config.h"
 #include "graphics/generic_button.h"
 #include "graphics/image.h"
 #include "graphics/lang_text.h"
@@ -27,6 +28,7 @@
 
 static void button_menu_index(int param1, int param2);
 static void button_menu_item(int item);
+static int button_index_to_submenu_item(int index);
 
 static generic_button build_menu_buttons[] = {
     {0, 0, 256, 20, button_menu_index, button_none, 1, 0},
@@ -176,6 +178,11 @@ static void draw_menu_buttons(void)
         item_index = building_menu_next_index(data.selected_submenu, item_index);
         label_draw(item_x_align, data.y_offset + MENU_Y_OFFSET + MENU_ITEM_HEIGHT * i, 16,
             data.focus_button_id == i + 1 ? 1 : 2);
+        if (config_get(CONFIG_UI_SHOW_BUILD_HOTKEYS) && i < 10) {
+            uint8_t number[2] = {(uint8_t) ('0' + (i + 1) % 10), 0};
+            text_draw(number, item_x_align + 10, data.y_offset + MENU_Y_OFFSET + 4 + MENU_ITEM_HEIGHT * i,
+                FONT_NORMAL_GREEN, 0);
+        }
         int type = building_menu_type(data.selected_submenu, item_index);
         if (is_all_button(type)) {
             text_draw_centered(translation_for(TR_BUILD_ALL_TEMPLES),
@@ -227,8 +234,33 @@ static int handle_build_submenu(const mouse *m)
                build_menu_buttons, data.num_items, &data.focus_button_id);
 }
 
+static int handle_hotkeys(const hotkeys *h)
+{
+    if (h->build_menu_item) {
+        if (h->build_menu_item <= data.num_items) {
+            button_menu_item(button_index_to_submenu_item(h->build_menu_item - 1));
+        }
+        return 1;
+    }
+    if (h->build_menu) {
+        if (building_menu_count_items(h->build_menu) > 0) {
+            window_build_menu_show(h->build_menu);
+        }
+        return 1;
+    }
+    if (h->building) {
+        window_build_menu_hide();
+        window_city_set_construction_type(h->building);
+        return 1;
+    }
+    return 0;
+}
+
 static void handle_input(const mouse *m, const hotkeys *h)
 {
+    if (handle_hotkeys(h)) {
+        return;
+    }
     if (handle_build_submenu(m) ||
         widget_sidebar_city_handle_mouse_build_menu(m)) {
         return;

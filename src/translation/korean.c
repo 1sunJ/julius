@@ -47,6 +47,7 @@ static translation_string all_strings[] = {
     {TR_CONFIG_SHOW_CONSTRUCTION_SIZE, "드래그 건설 시 전체 크기 표시"},
     {TR_CONFIG_HIGHLIGHT_LEGIONS, "커서가 올라간 군단 강조"},
     {TR_CONFIG_SHOW_MILITARY_SIDEBAR, "군단 제어판 표시"},
+    {TR_CONFIG_SHOW_BUILD_HOTKEYS, "건설 버튼과 메뉴에 단축키 표시"},
     {TR_CONFIG_FIX_IMMIGRATION_BUG, "매우 어려움 난이도 이주 문제 수정"},
     {TR_CONFIG_FIX_100_YEAR_GHOSTS, "100세 이상 고령 주민 문제 수정"},
     {TR_HOTKEY_TITLE, "Julius 단축키 설정"},

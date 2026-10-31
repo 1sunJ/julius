@@ -77,8 +77,36 @@ static const char *ini_keys[] = {
     "resize_to_1024",
     "save_screenshot",
     "save_city_screenshot",
-    "clone_building"
+    "clone_building",
+    "build_menu_water",
+    "build_menu_health",
+    "build_menu_temples",
+    "build_menu_education",
+    "build_menu_entertainment",
+    "build_menu_administration",
+    "build_menu_engineering",
+    "build_menu_security",
+    "build_menu_industry"
 };
+
+// Actions that received a default key after the hotkey file format was introduced.
+// Existing hotkey files don't mention them, so their defaults are added on load.
+static const hotkey_action actions_with_new_defaults[] = {
+    HOTKEY_BUILD_VACANT_HOUSE,
+    HOTKEY_BUILD_CLEAR_LAND,
+    HOTKEY_BUILD_ROAD,
+    HOTKEY_BUILD_MENU_WATER,
+    HOTKEY_BUILD_MENU_HEALTH,
+    HOTKEY_BUILD_MENU_TEMPLES,
+    HOTKEY_BUILD_MENU_EDUCATION,
+    HOTKEY_BUILD_MENU_ENTERTAINMENT,
+    HOTKEY_BUILD_MENU_ADMINISTRATION,
+    HOTKEY_BUILD_MENU_ENGINEERING,
+    HOTKEY_BUILD_MENU_SECURITY,
+    HOTKEY_BUILD_MENU_INDUSTRY
+};
+
+#define NUM_ACTIONS_WITH_NEW_DEFAULTS ((int) (sizeof(actions_with_new_defaults) / sizeof(hotkey_action)))
 
 static struct {
     hotkey_mapping default_mappings[HOTKEY_MAX_ITEMS][2];
@@ -178,6 +206,18 @@ static void init_defaults(void)
     set_mapping(KEY_TYPE_F12, KEY_MOD_NONE, HOTKEY_SAVE_SCREENSHOT);
     set_mapping(KEY_TYPE_F12, KEY_MOD_ALT, HOTKEY_SAVE_SCREENSHOT); // mac specific
     set_mapping(KEY_TYPE_F12, KEY_MOD_CTRL, HOTKEY_SAVE_CITY_SCREENSHOT);
+    set_layout_mapping("H", KEY_TYPE_H, KEY_MOD_NONE, HOTKEY_BUILD_VACANT_HOUSE);
+    set_layout_mapping("X", KEY_TYPE_X, KEY_MOD_NONE, HOTKEY_BUILD_CLEAR_LAND);
+    set_layout_mapping("R", KEY_TYPE_R, KEY_MOD_NONE, HOTKEY_BUILD_ROAD);
+    set_layout_mapping("A", KEY_TYPE_A, KEY_MOD_NONE, HOTKEY_BUILD_MENU_WATER);
+    set_layout_mapping("K", KEY_TYPE_K, KEY_MOD_NONE, HOTKEY_BUILD_MENU_HEALTH);
+    set_layout_mapping("G", KEY_TYPE_G, KEY_MOD_NONE, HOTKEY_BUILD_MENU_TEMPLES);
+    set_layout_mapping("S", KEY_TYPE_S, KEY_MOD_NONE, HOTKEY_BUILD_MENU_EDUCATION);
+    set_layout_mapping("N", KEY_TYPE_N, KEY_MOD_NONE, HOTKEY_BUILD_MENU_ENTERTAINMENT);
+    set_layout_mapping("V", KEY_TYPE_V, KEY_MOD_NONE, HOTKEY_BUILD_MENU_ADMINISTRATION);
+    set_layout_mapping("E", KEY_TYPE_E, KEY_MOD_NONE, HOTKEY_BUILD_MENU_ENGINEERING);
+    set_layout_mapping("M", KEY_TYPE_M, KEY_MOD_NONE, HOTKEY_BUILD_MENU_SECURITY);
+    set_layout_mapping("I", KEY_TYPE_I, KEY_MOD_NONE, HOTKEY_BUILD_MENU_INDUSTRY);
 }
 
 const hotkey_mapping *hotkey_for_action(hotkey_action action, int index)
@@ -236,6 +276,32 @@ static void add_mapping(int hotkey_id, const char *value)
     }
 }
 
+static int is_key_in_use(key_type key, key_modifier_type modifiers)
+{
+    for (int i = 0; i < data.num_mappings; i++) {
+        if (data.mappings[i].key == key && data.mappings[i].modifiers == modifiers) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void add_new_defaults(const int *action_in_file)
+{
+    for (int i = 0; i < NUM_ACTIONS_WITH_NEW_DEFAULTS; i++) {
+        hotkey_action action = actions_with_new_defaults[i];
+        if (action_in_file[action]) {
+            continue;
+        }
+        for (int index = 0; index < 2; index++) {
+            const hotkey_mapping *mapping = &data.default_mappings[action][index];
+            if (mapping->key && !is_key_in_use(mapping->key, mapping->modifiers)) {
+                hotkey_config_add_mapping(mapping);
+            }
+        }
+    }
+}
+
 static void load_file(void)
 {
     hotkey_config_clear();
@@ -243,6 +309,7 @@ static void load_file(void)
     if (!fp) {
         return;
     }
+    int action_in_file[HOTKEY_MAX_ITEMS] = {0};
     char line_buffer[MAX_LINE];
     char *line;
     while ((line = fgets(line_buffer, MAX_LINE, fp))) {
@@ -260,17 +327,23 @@ static void load_file(void)
         for (int i = 0; i < HOTKEY_MAX_ITEMS; i++) {
             if (strcmp(ini_keys[i], line) == 0) {
                 add_mapping(i, value);
+                action_in_file[i] = 1;
                 break;
             }
         }
         // Migrate changed keys
         if (strcmp("build_clear_land", line) == 0) {
             add_mapping(HOTKEY_BUILD_VACANT_HOUSE, value);
+            action_in_file[HOTKEY_BUILD_VACANT_HOUSE] = 1;
         } else if (strcmp("build_vacant_house", line) == 0) {
             add_mapping(HOTKEY_BUILD_CLEAR_LAND, value);
+            action_in_file[HOTKEY_BUILD_CLEAR_LAND] = 1;
         }
     }
     file_close(fp);
+    if (data.num_mappings > 0) {
+        add_new_defaults(action_in_file);
+    }
 }
 
 void hotkey_config_load(void)
@@ -294,6 +367,13 @@ void hotkey_config_save(void)
     for (int i = 0; i < data.num_mappings; i++) {
         const char *key_name = key_combination_name(data.mappings[i].key, data.mappings[i].modifiers);
         fprintf(fp, "%s=%s\n", ini_keys[data.mappings[i].action], key_name);
+    }
+    // Write cleared actions as empty entries, so their defaults are not added again on load
+    for (int i = 0; i < NUM_ACTIONS_WITH_NEW_DEFAULTS; i++) {
+        hotkey_action action = actions_with_new_defaults[i];
+        if (!hotkey_for_action(action, 0)) {
+            fprintf(fp, "%s=\n", ini_keys[action]);
+        }
     }
     file_close(fp);
 }

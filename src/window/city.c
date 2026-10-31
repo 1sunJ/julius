@@ -30,6 +30,7 @@
 #include "widget/sidebar/city.h"
 #include "widget/sidebar/military.h"
 #include "window/advisors.h"
+#include "window/build_menu.h"
 #include "window/file_dialog.h"
 
 static void draw_background(void)
@@ -190,7 +191,7 @@ static void toggle_pause(void)
     city_warning_clear_all();
 }
 
-static void set_construction_building_type(building_type type)
+void window_city_set_construction_type(building_type type)
 {
     if (scenario_building_allowed(type) && building_menu_is_enabled(type)) {
         building_construction_cancel();
@@ -248,13 +249,16 @@ static void handle_hotkeys(const hotkeys *h)
         window_file_dialog_show(FILE_TYPE_SAVED_GAME, FILE_DIALOG_SAVE);
     }
     if (h->building) {
-        set_construction_building_type(h->building);
+        window_city_set_construction_type(h->building);
     }
     if (h->clone_building) {
         building_type type = building_clone_type_from_grid_offset(widget_city_current_grid_offset());
         if (type) {
-            set_construction_building_type(type);
+            window_city_set_construction_type(type);
         }
+    }
+    if (h->build_menu && !building_construction_in_progress() && building_menu_count_items(h->build_menu) > 0) {
+        window_build_menu_show(h->build_menu);
     }
 }
 
