@@ -1,5 +1,14 @@
 # Julius ![](res/julius_48.png)
 
+> [!NOTE]
+> **Build hotkeys mod**: this branch is a modified Julius 1.8.0 that adds keyboard build hotkeys (category keys, number keys and key labels on the sidebar).
+> Downloads, install guide and key list: **[1sunJ/caesar3-build-hotkeys](https://github.com/1sunJ/caesar3-build-hotkeys)** · Source changes: [compare](https://github.com/1sunJ/julius/compare/v1.8.0...build-hotkeys)
+>
+> **건설 단축키 수정판**: 이 브랜치는 Julius 1.8.0에 키보드 건설 단축키를 추가한 수정판입니다. 다운로드, 설치 방법, 단축키 목록은 위 링크에서 볼 수 있습니다.
+>
+> Not an official Julius release. Original project: [bvschaik/julius](https://github.com/bvschaik/julius). The original Julius README follows below.
+
+
 [![Github Actions](https://github.com/bvschaik/julius/workflows/Build%20Julius/badge.svg)](https://github.com/bvschaik/julius/actions)
 
 Download:
